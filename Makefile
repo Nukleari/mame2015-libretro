@@ -165,11 +165,23 @@ ifneq (,$(findstring unix,$(platform)))
       BIGENDIAN=1
    endif
    ifneq (,$(findstring armv,$(UNAME) $(platform)))
-      CCOMFLAGS += -mstructure-size-boundary=32
+      ifeq ($(shell echo `$(CC) -dumpversion` ">= 6" | bc -l), 1)
+         CCOMFLAGS += -mstructure-size-boundary=32
+      endif
       PLATCFLAGS += -DSDLMAME_NO64BITIO -DSDLMAME_ARM -DRETRO_SETJMP_HACK -DARM
       LDFLAGS += -Wl,--fix-cortex-a8 -Wl,--no-as-needed
       NOASM = 1
       FORCE_DRC_C_BACKEND = 1
+      ifneq (,$(findstring classic_armv8_a35,$(platform)))
+         CCOMFLAGS += -Ofast \
+         -fuse-linker-plugin \
+         -fdata-sections -ffunction-sections -Wl,--gc-sections \
+         -fno-stack-protector -fno-ident -fomit-frame-pointer \
+         -falign-functions=1 -falign-jumps=1 -falign-loops=1 \
+         -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
+         -fmerge-all-constants -fno-math-errno \
+         -marm -mfpu=neon-fp-armv8 -mfloat-abi=hard -march=armv8-a
+      endif
    endif
    CCOMFLAGS += $(PLATCFLAGS)
 
